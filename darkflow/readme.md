@@ -1,0 +1,1 @@
+This folder contains darkflow network scripts. Not necessary for post processing so omitted.
