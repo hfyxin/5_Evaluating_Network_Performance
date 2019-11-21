@@ -1,0 +1,1 @@
+This folder contain trained weights for tiny yolo. Files are too big to upload.
