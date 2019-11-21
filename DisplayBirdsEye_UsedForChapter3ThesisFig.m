@@ -1,7 +1,10 @@
+%% Generates images contain detected objects, convert to birds eye view. 
+%
 % remainder of code can be found after 25:00 of video found at:
 % https://www.mathworks.com/videos/introduction-to-automated-driving-system-toolbox-1501177087798.html?elqsid=1533134550499&potential_use=Student
 clear;
 
+%% Load detection result
 % Does data have groundTruth and detection data? y/n = 1/0
 groundTruth = 0;
 groundTruthWithDetected = 0;
@@ -9,19 +12,20 @@ detected = 1;
 
 if groundTruth
 % load detections
-    load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\Ground Truth Data\All_Combined\Test\testLabels.mat");
-    IoUtruth = testLabelData; % was detections
-    
+    % load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\Ground Truth Data\All_Combined\Test\testLabels.mat");
+    % IoUtruth = testLabelData; % was detections
 end
+
 if detected
-    load("C:\Users\benmi\Documents\Thesis\Thesis Instructions\Raw Data\IoUdetectedWithConfidence.mat")
+	% This is validation set.
+    load(".\results\IoUdetectedWithConfidence.mat")
     IoUdetected = IoUdetectedWithConfidence;
 end
-    
 
 % location of images
-imgPath = 'C:\Users\benmi\Documents\Thesis\Thesis Instructions\Raw Data\All_Combined\Validation';
+imgPath = '..\All_Combined\Validation';
 
+%% Select classes
 % Classes to include? y/n = 1/0
 CRO = 1;
 BIK = 1;
@@ -34,89 +38,87 @@ DGS = 1;
 DGL = 1;
 SUV = 0;
 
-j=1;
 % remove unwanted classes
+j=1;
 if CRO == 0
-    IoUtruth.CRO = [];
+    % IoUtruth.CRO = [];
     IoUdetected.CRO = [];
 else
     colour{j} = 'green';
     j=j+1;
 end
 if BUS == 0
-    IoUtruth.BUS = [];
+    % IoUtruth.BUS = [];
     IoUdetected.BUS = [];
 else    
     colour{j} = 'blue';
     j=j+1;
 end
 if CAR == 0
-    IoUtruth.CAR = [];
+    % IoUtruth.CAR = [];
     IoUdetected.CAR = [];
 else    
     colour{j} = 'blue';
     j=j+1;
 end
 if DGS == 0    
-    IoUtruth.DGS = [];
+    % IoUtruth.DGS = [];
     IoUdetected.DGS = [];
 else    
     colour{j} =[0 0.4470 0.7410];
     j=j+1;
 end
 if DGL == 0      
-    IoUtruth.DGL = [];
+    % IoUtruth.DGL = [];
     IoUdetected.DGL = [];
 else    
     colour{j} = [0.9290 0.6940 0.1250];
     j=j+1;
 end
 if BIK == 0
-    IoUtruth.BIK = [];
+    % IoUtruth.BIK = [];
     IoUdetected.BIK = [];
 else
     colour{j} = 'black';
     j=j+1;    
 end
 if PDS == 0
-    IoUtruth.PDS = [];
+    % IoUtruth.PDS = [];
     IoUdetected.PDS = [];
 else    
     colour{j} = 'cyan';
     j=j+1;
 end
 if PDC == 0
-    IoUtruth.PDC = [];
+    % IoUtruth.PDC = [];
     IoUdetected.PDC = [];
 else
     colour{j} = 'magenta';
     j=j+1;
 end
 if PDU == 0
-    IoUtruth.PDU = [];
+    % IoUtruth.PDU = [];
     IoUdetected.PDU = [];
 else    
     colour{j} = 'red';
     j=j+1;
 end
 if SUV == 0
-    IoUtruth.SUV = [];
+    % IoUtruth.SUV = [];
     IoUdetected.SUV = [];    
 end
 
 detections = IoUdetected; % for testing
 
-ax1 = axes('Position', [0.02 0 0.55 1]);
-
-% get camera parameters
-camParameters = open('C:\Users\benmi\Documents\Thesis\Matlab\Calibration Parameters\cameraParametersJune7Calib.mat');
+%% get camera parameters
+camParameters = open('.\parameters\cameraParametersJune7Calib.mat');
 focalLength = camParameters.cameraParamsJune7Calibration.FocalLength; % [fx, fy] in pixel units
 principalPoint = camParameters.cameraParamsJune7Calibration.PrincipalPoint; % [cx, cy] optical center in pixel coordinates
 imageSize = [512, 640]; % [nrows, mcols]
 
 camIntrinsics = cameraIntrinsics(focalLength, principalPoint, imageSize);
 
-% Camera tilt angle in degrees
+%% Camera tilt angle in degrees
 tiltDeg = 8.584;
 tilt = tiltDeg * pi/180;
 
@@ -148,7 +150,7 @@ sensor2 = monoCamera(camIntrinsics,height,'Pitch',pitch);
 scale = 0.73142857;
 
 
-% initialize the required plots:
+%% initialize the required plots:
 
 % % Use the imageToVehicle() function!!!
 % % Create extrinsic matrix for predicting object locations 
@@ -160,7 +162,7 @@ scale = 0.73142857;
 % camMatrix = cameraMatrix(camParameters.cameraParamsJune7Calibration, rotMatCam, transMatCam)
 % camMat2 = [camParameters.cameraParamsJune7Calibration.IntrinsicMatrix zeros(3,1)]*extrinsicMat
 
-%Add sensor to birds eye plot
+%% Add sensor to birds eye plot
 ax2 = axes('Position', [0.6 0.12 0.4 0.85]);
 bep = birdsEyePlot('Parent', ax2,...
     'Xlimits', [0 100],...
@@ -205,9 +207,10 @@ end
 
 truthPlot = outlinePlotter(bep);
 
-% parse through all images and plot their detections with bounding boxes
+%% parse through all images and plot their detections with bounding boxes
 % and world coordinates on the plot.
 
+ax1 = axes('Position', [0.02 0 0.55 1]);
 for k = 1:20:size(detections, 1)
 %     img = imread([imgPath,'\',detections.imageFilename{k}])*scale;
 %     imgResize = img*scale;
