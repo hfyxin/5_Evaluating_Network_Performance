@@ -1,3 +1,5 @@
+%% Generates images contain detected objects, convert to birds eye view. 
+
 % remainder of code can be found after 25:00 of video found at:
 % https://www.mathworks.com/videos/introduction-to-automated-driving-system-toolbox-1501177087798.html?elqsid=1533134550499&potential_use=Student
 clear;
@@ -7,36 +9,38 @@ groundTruth = 0;
 groundTruthWithDetected = 1;
 detected = 0;
 pauseTime = 0;
-saveResults = 0;
+saveResults = 1;
 dispResults = 0;
 
-imgSavePath = 'C:\Users\benmi\Documents\Thesis\Thesis Instructions\Results\Birds Eye with Covariance';
+imgSavePath = '.\results\birds_eye_w_covariance';
 IoU = '0p4';
 probErr = 0.95;
 
+% This version only uses rectTPTable.mat
 if groundTruth
-% load detections
-    load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\Ground Truth Data\Combined_No_Stationary_Vehicle\Test\testLabels.mat");
-    IoUtruth = testLabelData; % was detections
+	% load detections
+    % load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\Ground Truth Data\Combined_No_Stationary_Vehicle\Test\testLabels.mat");
+    % IoUtruth = testLabelData; % was detections
     
 end
 if detected
-    load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\YOLOv2\7 Classes Trained on All Data\epoch-step 29250\All Data\IoUdetectedWithConfidence.mat")
+	% This path is for test data, but not used in later script.
+    % load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\YOLOv2\7 Classes Trained on All Data\epoch-step 29250\All Data\IoUdetectedWithConfidence.mat")
+	load(".\results\IoUdetectedWithConfidence.mat");
     IoUdetected = IoUdetectedWithConfidence;
 end
 
 % get these using IoU_calc_per_frame_v6.m (fixed the FP and FN removal
 % problem from v5 by adding FNref and FPref variables
 if groundTruthWithDetected;
-    load("C:\Users\benmi\Documents\Thesis\Thesis Instructions\Results\rectFNTable.mat");
-    load("C:\Users\benmi\Documents\Thesis\Thesis Instructions\Results\rectFPTable.mat");
-    load("C:\Users\benmi\Documents\Thesis\Thesis Instructions\Results\rectTPTable.mat");
+    load(".\results\rectFNTable.mat");
+    load(".\results\rectFPTable.mat");
+    load(".\results\rectTPTable.mat");
 end
 
 
-
 % location of images
-imgPath = 'C:\Users\benmi\Documents\Thesis\Thesis Instructions\Raw Data\All_Combined\Validation';
+imgPath = '..\All_Combined\Validation';
 
 % Classes to include? y/n = 1/0
 CRO = 1;
@@ -53,70 +57,70 @@ SUV = 0;
 j=1;
 % remove unwanted classes
 if CRO == 0
-    IoUtruth.CRO = [];
+    % IoUtruth.CRO = [];
     IoUdetected.CRO = [];
 else
     colour{j} = 'green';
     j=j+1;
 end
 if BUS == 0
-    IoUtruth.BUS = [];
+    % IoUtruth.BUS = [];
     IoUdetected.BUS = [];
 else    
     colour{j} = 'blue';
     j=j+1;
 end
 if CAR == 0
-    IoUtruth.CAR = [];
+    % IoUtruth.CAR = [];
     IoUdetected.CAR = [];
 else    
     colour{j} = 'blue';
     j=j+1;
 end
 if DGS == 0    
-    IoUtruth.DGS = [];
+    % IoUtruth.DGS = [];
     IoUdetected.DGS = [];
 else    
     colour{j} = 'blue';%[0 0.4470 0.7410];
     j=j+1;
 end
 if DGL == 0      
-    IoUtruth.DGL = [];
+    % IoUtruth.DGL = [];
     IoUdetected.DGL = [];
 else    
     colour{j} = [0.9290 0.6940 0.1250];
     j=j+1;
 end
 if BIK == 0
-    IoUtruth.BIK = [];
+    % IoUtruth.BIK = [];
     IoUdetected.BIK = [];
 else
     colour{j} = 'black';
     j=j+1;    
 end
 if PDS == 0
-    IoUtruth.PDS = [];
+    % IoUtruth.PDS = [];
     IoUdetected.PDS = [];
 else    
     colour{j} = 'cyan';
     j=j+1;
 end
 if PDC == 0
-    IoUtruth.PDC = [];
+    % IoUtruth.PDC = [];
     IoUdetected.PDC = [];
 else
     colour{j} = 'magenta';
     j=j+1;
 end
 if PDU == 0
-    IoUtruth.PDU = [];
+    % IoUtruth.PDU = [];
     IoUdetected.PDU = [];
 else    
     colour{j} = 'red';
     j=j+1;
 end
 if SUV == 0
-    IoUtruth.SUV = [];
+    % IoUtruth.SUV = [];
     IoUdetected.SUV = [];    
 end
 
@@ -125,7 +129,7 @@ detGround = rectTPTable;
 
 
 % get camera parameters
-camParameters = open('C:\Users\benmi\Documents\Thesis\Matlab\Calibration Parameters\cameraParametersJune7Calib.mat');
+camParameters = open('.\parameters\cameraParametersJune7Calib.mat');
 focalLength = camParameters.cameraParamsJune7Calibration.FocalLength; % [fx, fy] in pixel units
 principalPoint = camParameters.cameraParamsJune7Calibration.PrincipalPoint; % [cx, cy] optical center in pixel coordinates
 RadialDistortion = camParameters.cameraParamsJune7Calibration.RadialDistortion; %[0 0]
@@ -420,6 +424,9 @@ for k = 1:size(detGround, 1) %size(detGround, 1)-4% 370:390%
     end
     
     if saveResults == 1
+		if ~exist(imgSavePath, 'dir')
+			mkdir(imgSavePath)
+		end
         saveas(gcf, [imgSavePath, '\',detGround.imageFilename{k}, '_IoU_', IoU,'.jpg'])
     end
 
