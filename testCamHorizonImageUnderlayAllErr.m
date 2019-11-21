@@ -1,3 +1,5 @@
+%% Overlay distance info on original image.
+
 % pixelLocations = [96.5 135; 66 139; 237 134; 362 149; ...
 %     365 144; 377.78 140; 378 142.7]
 
@@ -15,7 +17,7 @@ sensorLocation = [-2.235 0.152];
 sensor2 = monoCamera(camIntrinsics,height,'Pitch',pitch, 'sensorLocation', sensorLocation);
 
 
-img = imread("C:\Users\benmi\Documents\Thesis\Thesis Instructions\Raw Data\frame_2219.jpg");%032.jpg");%ones(512, 640,3);
+img = imread("..\All_Combined\frame_2219.jpg");   %032.jpg");  %ones(512, 640,3);
 scale = 0.73142857;
 imag = imresize(img,scale);
 pixelToDist = [];
@@ -115,7 +117,7 @@ text(100, 240, ['distance range = 10.0m to 14.9m'], 'Color', 'w')
 text(100, 300, ['distance range = 5.0 to 10.0m'], 'Color', 'w')
 text(100, 400, ['distance range = 1.1 to 5.0m'], 'Color', 'w')
 
-saveas(gcf, "C:\Users\benmi\Documents\Thesis\Thesis Instructions\Results\RangeDepictionAllerror.jpg");
+saveas(gcf, ".\results\RangeDepictionAllerror.jpg");
 
 
 

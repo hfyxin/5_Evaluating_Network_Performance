@@ -29,7 +29,7 @@ load(".\results\IoUdetectedWithConfidence.mat");       % detected boxes
 IoUtruth = validationLabelData;
 IoUdetected = IoUdetectedWithConfidence;
 imgPath = '..\All_Combined\Validation';  % Caveate! Use single quotes.
-excSavePath = '.\Results';
+excSavePath = '.\results';
 
 
 %% Settings
@@ -721,3 +721,8 @@ confMatTable = array2table(confMat,'VariableNames',confMatCols,'RowNames',confRo
 writetable(confMatTable,filename,'Sheet',1,'Range','D5', 'WriteRowNames', true);
 fprintf("Performance result is written to: %s \n", filename)
 
+%% Save some other data
+save([excSavePath,'\rectFNTable'],'rectFNTable')
+save([excSavePath,'\rectFPTable'],'rectFPTable')
+save([excSavePath,'\rectTPTable'],'rectTPTable')
+fprintf("Other files saved: \n\t rectFNTable.mat \n\t rectFPTable.mat \n\t rectTPTable.mat\n")
