@@ -20,17 +20,19 @@
 % Load the ground truth and detected tables
 % may want to incorporate this to work with the IoUdetectTableGen.m script
 % (convert to a function with inputs being filepaths)
-clear
 
-% ground truth
-load("C:\Users\benmi\Documents\Thesis\Thesis Instructions\Raw Data\All_Combined\Validation\validationLabels.mat");
-% detected boxes
-load("C:\Users\benmi\Documents\Thesis\Thesis Instructions\Raw Data\IoUdetectedWithConfidence.mat");
+%% Load bounding box data
+clear
+load("..\All_Combined\Validation\validationLabels.mat")  % ground truth
+load(".\results\IoUdetectedWithConfidence.mat");       % detected boxes
+
 IoUtruth = validationLabelData;
 IoUdetected = IoUdetectedWithConfidence;
-imgPath = 'C:\Users\benmi\Documents\Thesis\Thesis Instructions\Raw Data\All_Combined\Validation';
-excSavePath = 'C:\Users\benmi\Documents\Thesis\Thesis Instructions\Results';
+imgPath = '..\All_Combined\Validation';  % Caveate! Use single quotes.
+excSavePath = '.\Results';
 
+
+%% Settings
 % Algorithm
 alg = 'YOLOv2';
 % Number of epoches or steps
@@ -49,21 +51,14 @@ threshtxt = '0p4';
 requiredIoU = 0.4;
 IoUtxt = '0p4';
 
-
-
-imgSavePath = ['C:\Users\benmi\Documents\Thesis\Thesis Instructions\Results\IoU_calc_script'];
-
-
+imgSavePath = ['.\Results\IoU_calc_images'];
 % display the images? y/n = 1/0
 dispRaw = 0;
 dispResults = 0;
-saveResults = 0;
-if dispResults == 1
-    pauseTime = 0;
-end
+saveResults = 0;    % save images
+pauseTime = 1;      % only effective when one of above is set 1.
 
-
-tic
+%% Select favored classes
 % Classes to include? y/n = 1/0
 CRO = 1;
 BIK = 1;
@@ -75,17 +70,6 @@ BUS = 0;
 DGS = 1;
 DGL = 1;
 SUV = 0;
-
-% CRO = 1;
-% BIK = 1;
-% PDU = 1;
-% PDC = 1;
-% PDS = 1;
-% CAR = 0;
-% BUS = 0;
-% DGS = 1;
-% DGL = 1;
-% SUV = 0;
 
 % remove unwanted classes
 if CRO == 0
@@ -128,8 +112,16 @@ if SUV == 0
     IoUtruth.SUV = [];
     IoUdetected.SUV = [];    
 end
-    
+
+%% Processing: Iterate through each ground truth
+tic
+fprintf("Processing results of %d images:", size(IoUtruth,1));
 for y = 1:size(IoUtruth,1) %203%1:size(IoUtruth,1) %100
+% print progress info
+if rem(y, 100) == 1
+    fprintf("%d, ", y);
+end
+% read orginal image
 img1 = imread([imgPath, '\',IoUtruth{y,1}{1}]);
 %Initialize Bounding boxes of true and detected labelled images from input
 %information
@@ -154,7 +146,7 @@ for i = 2:length({IoUtruth.Properties.VariableNames{:}})
         end
     end
     numDet{i-1} = size(rectDetect{i-1},1);
-end 
+end
 
 % Display detected and true bounding boxes on image
 if dispRaw == 1
@@ -165,10 +157,10 @@ hold on
 % Display ground truth bounding boxes
 for j = 1:length(rectTruth)
     if length(rectTruth{j})>0
-    for k = 1:length(rectTruth{j}(:,1));
-        rectangle('Position',rectTruth{j}(k,:), 'Edgecolor', 'g');
-        text(rectTruth{j}(k,1), rectTruth{j}(k,2)+rectTruth{j}(k,4)+8, IoUtruth.Properties.VariableNames{j+1}, 'FontSize', 12, 'Color', 'green')        
-    end
+        for k = 1:length(rectTruth{j}(:,1));
+            rectangle('Position',rectTruth{j}(k,:), 'Edgecolor', 'g');
+            text(rectTruth{j}(k,1), rectTruth{j}(k,2)+rectTruth{j}(k,4)+8, IoUtruth.Properties.VariableNames{j+1}, 'FontSize', 12, 'Color', 'green')        
+        end
     else
     end
 end
@@ -528,6 +520,7 @@ end
 close all
 end
 
+fprintf("Done.\n")
 toc
 
 % don't include mAP performance metric:
@@ -695,7 +688,7 @@ confMat(end+1,:) = [F2{1,:}];
 
 
     
-
+%% Save performance results in excel sheet
 % % create a table that can be exported with images to get statistical values
 % stats = [recall_BIK, recall_CRO, recall_PDU, recall_PDC, recall_allf;...
 %     precision_BIK, precision_CRO, precision_PDU, precision_PDC, precision_allf];
@@ -726,5 +719,5 @@ confRowNames{end+1} = 'F1 Score';
 confRowNames{end+1} = 'F2 Score';
 confMatTable = array2table(confMat,'VariableNames',confMatCols,'RowNames',confRowNames);
 writetable(confMatTable,filename,'Sheet',1,'Range','D5', 'WriteRowNames', true);
-
+fprintf("Performance result is written to: %s \n", filename)
 
