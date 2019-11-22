@@ -1,18 +1,20 @@
 %% Generates images contain detected objects, convert to birds eye view. 
-
+% plotting variance oval as well.
+%
 % remainder of code can be found after 25:00 of video found at:
 % https://www.mathworks.com/videos/introduction-to-automated-driving-system-toolbox-1501177087798.html?elqsid=1533134550499&potential_use=Student
-clear;
+clear
 
 % Does data have groundTruth and detection data? y/n = 1/0
-groundTruth = 0;
-groundTruthWithDetected = 1;
-detected = 0;
-pauseTime = 0;
-saveResults = 1;
-dispResults = 0;
+groundTruth = 0;     % doesn't work
+detected = 0;        % doesn't work
+groundTruthWithDetected = 1;   % works
+pauseTime = 0;       % pause btw showing images
+dispImages = 0;     % display images. 0: only do calculation.
+saveImages = 0;     % save images to folder
 
 imgSavePath = '.\results\birds_eye_w_covariance';
+resultSavePath = '.\results';
 IoU = '0p4';
 probErr = 0.95;
 
@@ -21,8 +23,8 @@ if groundTruth
 	% load detections
     % load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\Ground Truth Data\Combined_No_Stationary_Vehicle\Test\testLabels.mat");
     % IoUtruth = testLabelData; % was detections
-    
 end
+
 if detected
 	% This path is for test data, but not used in later script.
     % load("C:\Users\benmi\Documents\Thesis\Algorithm Performance\YOLOv2\7 Classes Trained on All Data\epoch-step 29250\All Data\IoUdetectedWithConfidence.mat")
@@ -32,7 +34,8 @@ end
 
 % get these using IoU_calc_per_frame_v6.m (fixed the FP and FN removal
 % problem from v5 by adding FNref and FPref variables
-if groundTruthWithDetected;
+if groundTruthWithDetected
+    % These contain ground truth, prediction and ?
     load(".\results\rectFNTable.mat");
     load(".\results\rectFPTable.mat");
     load(".\results\rectTPTable.mat");
@@ -126,9 +129,11 @@ end
 
 detections = IoUdetected; % for testing
 detGround = rectTPTable;
+clear IoUdetected rectTPTable
+clear CRO BIK PDU PDC PDS CAR BUS DGS DGL SUV
 
 
-% get camera parameters
+%% get camera parameters
 camParameters = open('.\parameters\cameraParametersJune7Calib.mat');
 focalLength = camParameters.cameraParamsJune7Calibration.FocalLength; % [fx, fy] in pixel units
 principalPoint = camParameters.cameraParamsJune7Calibration.PrincipalPoint; % [cx, cy] optical center in pixel coordinates
@@ -162,6 +167,9 @@ sensor = visionDetectionGenerator('SensorLocation',...
 % used to get the world coordinates from image frame
 sensor2 = monoCamera(camIntrinsics,height,'Pitch',pitch, 'sensorLocation', sensorLocation);
 
+% clear them to make workspace cleaner.
+clear focalLength principalPoint RadialDistortion imageSize
+clear tiltDeg tilt height pitch yaw roll sensorLocation
 
 % since all detections were made on an image of size [700,875] and
 % calibration was done for an image of size [512,640], the images need to
@@ -169,11 +177,11 @@ sensor2 = monoCamera(camIntrinsics,height,'Pitch',pitch, 'sensorLocation', senso
 scale = 0.73142857;
 
     
-% Create detection plotter for each class
+%% Create detection plotter for each class
 classes = {detGround.Properties.VariableNames{2:end}};
 
 
-% initialize the required plots:
+%% initialize the required plots:
 
 % % Use the imageToVehicle() function!!!
 % % Create extrinsic matrix for predicting object locations 
@@ -185,115 +193,117 @@ classes = {detGround.Properties.VariableNames{2:end}};
 % camMatrix = cameraMatrix(camParameters.cameraParamsJune7Calibration, rotMatCam, transMatCam)
 % camMat2 = [camParameters.cameraParamsJune7Calibration.IntrinsicMatrix zeros(3,1)]*extrinsicMat
 
-if dispResults
-ax1 = axes('Position', [0.02 0 0.55 1]);
+if dispImages
+    % area to display image
+    ax1 = axes('Position', [0.02 0 0.55 1]);
 
-%Add sensor to birds eye plot
-ax2 = axes('Position', [0.6 0.12 0.4 0.85]);
-bep = birdsEyePlot('Parent', ax2,...
-    'Xlimits', [0 100],...
-    'Ylimits', [-30 30]);
-legend(ax2, 'on');
-% legend(ax2, 'off');
+    % area to display birds eye plot
+    ax2 = axes('Position', [0.6 0.12 0.4 0.85]);
+    bep = birdsEyePlot('Parent', ax2,...
+        'Xlimits', [0 100],...
+        'Ylimits', [-30 30]);
 
-%create plotters
-covPlot = coverageAreaPlotter(bep,...
-    'FaceColor','blue',...
-    'EdgeColor','blue');
+    % V shaped area
+    covPlot = coverageAreaPlotter(bep,...
+        'FaceColor','blue',...
+        'EdgeColor','blue');
+    % Update coverage area plotter
+    plotCoverageArea(covPlot,...
+        sensor.SensorLocation,sensor.MaxRange,...
+        sensor.Yaw,sensor.FieldOfView(1))
 
-% Update coverage area plotter
-plotCoverageArea(covPlot,...
-    sensor.SensorLocation,sensor.MaxRange,...
-    sensor.Yaw,sensor.FieldOfView(1))
+    % create lane marking plotter
+    LanePlotter = laneBoundaryPlotter(bep, 'Color', 'red');
+    % constant lanes for understanding of object locations
+    % driving lane, assuming a lane width of 3m
+    lb = parabolicLaneBoundary([-0.00,0.0, 1.5]); 
+    rb = parabolicLaneBoundary([-0.0,0.0,-1.5]);
+    % adjacent lanes
+    lb2 = parabolicLaneBoundary([-0.00,0.0, 4.5]);
+    rb2 = parabolicLaneBoundary([-0.0,0.0,-4.5]);
+    % Update lanes
+    plotLaneBoundary(LanePlotter, [lb lb2, rb rb2])
 
-%create lane marking plotter
-LanePlotter = laneBoundaryPlotter(bep, 'Color', 'red');
-% constant lanes for understanding of object locations
-% driving lane, assuming a lane width of 3m
-lb = parabolicLaneBoundary([-0.00,0.0, 1.5]); 
-rb = parabolicLaneBoundary([-0.0,0.0,-1.5]);
-% adjacent lanes
-lb2 = parabolicLaneBoundary([-0.00,0.0, 4.5]);
-rb2 = parabolicLaneBoundary([-0.0,0.0,-4.5]);
+    % Plot legend
+    for m = 1:length(classes)
+        detPlot{m} = detectionPlotter(bep,...
+            'MarkerFaceColor',colour{m},...
+            'DisplayName', classes{m},...
+            'Marker','o');
+        detPlotTruth{m} = detectionPlotter(bep,...
+            'MarkerFaceColor',colour{m},...
+            'DisplayName', classes{m},...
+            'Marker','^');
+        detPlotVar{m} = detectionPlotter(bep,...
+            'MarkerFaceColor','non',...
+            'DisplayName', classes{m},...
+            'Marker','.');
+        legend
+    end
 
-% Update lanes
-plotLaneBoundary(LanePlotter,...
-    [lb lb2, rb rb2])
-
-
-for m = 1:length(classes)
-    detPlot{m} = detectionPlotter(bep,...
-        'MarkerFaceColor',colour{m},...
-        'DisplayName', classes{m},...
-        'Marker','o');
-    detPlotTruth{m} = detectionPlotter(bep,...
-        'MarkerFaceColor',colour{m},...
-        'DisplayName', classes{m},...
-        'Marker','^');
-    detPlotVar{m} = detectionPlotter(bep,...
-        'MarkerFaceColor','non',...
-        'DisplayName', classes{m},...
-        'Marker','.');
-
+    truthPlot = outlinePlotter(bep);
+    % set figure size
+    set(gcf, 'Position', [10 10 1200 600])
 end
 
-truthPlot = outlinePlotter(bep);
-
-% parse through all images and plot their detections with bounding boxes
+%% parse through all images and plot their detections with bounding boxes
 % and world coordinates on the plot.
-
-set(gcf, 'Position', [10 10 1200 600])
-end
-
-for k = 1:size(detGround, 1) %size(detGround, 1)-4% 370:390%
+for k = 1:size(detGround, 1)  % each image
+% size(detGround, 1)-4% 370:390%
 %     img = imread([imgPath,'\',detections.imageFilename{k}])*scale;
 %     imgResize = img*scale;
 %     imshow(img,'Parent',ax1)
 
+    % init
     boundingBox = cell(1,length(classes));
     boundingBoxTruth = cell(1,length(classes));
-    for m = 1:length(classes)
-        for h = 1:size(detGround{k,:}{m+1},1)
-        if size(detGround{k,:}{m+1}{h,3},1)>0 %detections{k,:}{m+1},1)>0
-            boundingBox{m} = [boundingBox{m} ; detGround{k,:}{m+1}{h,3}{1}(:,1:4)*scale];%detections{k,:}{m+1}(:,1:4)
-            % minimum bounding box value can be is 1
-            boundingBox{m}(boundingBox{m}<1)=1;
-        end
-        end
-        % get the bounding Box of the ground truth
-        
-        for g = 1:size(detGround{k,:}{m+1},1)
-        if size(detGround{k,:}{m+1}{g,1},1)>0
-            count = 1;
-            for t = 1:size(detGround{k,:}{m+1}{g,1}{1},1)
-                if max(detGround{k,:}{m+1}{g,1}{1}(t,1:4))==0
-                    
-                    boundingBoxTruth{m} = [boundingBoxTruth{m} ; detGround{k,:}{m+1}{g,1}{1}(t-count,1:4)*scale];%detections{k,:}{m+1}(:,1:4)
-                    % minimum bounding box value can be is 1
-                    boundingBoxTruth{m}(boundingBoxTruth{m}<1)=1;
-                    count = count+1;
-                else
-                    boundingBoxTruth{m} = [boundingBoxTruth{m} ; detGround{k,:}{m+1}{g,1}{1}(t,1:4)*scale];
-                    boundingBoxTruth{m}(boundingBoxTruth{m}<1)=1;
-                end                    
+    % get bbox for current image
+    for m = 1:length(classes)     % each class (column)
+
+        % get the bounding Box of the prediction
+        for h = 1:size(detGround{k,:}{m+1},1)   % each detection of same class
+            if size(detGround{k,:}{m+1}{h,3},1)>0  % detection found
+                % bounding box dimension
+                boundingBox{m} = [boundingBox{m} ; detGround{k,:}{m+1}{h,3}{1}(:,1:4)*scale];%detections{k,:}{m+1}(:,1:4)
+                % minimum bounding box value can be is 1
+                boundingBox{m}(boundingBox{m}<1)=1;
             end
         end
-        end
+        
+        % get the bounding Box of the ground truth
+        for g = 1:size(detGround{k,:}{m+1},1)
+            if size(detGround{k,:}{m+1}{g,1},1)>0
+                count = 1;
+                for t = 1:size(detGround{k,:}{m+1}{g,1}{1},1)
+                    if max(detGround{k,:}{m+1}{g,1}{1}(t,1:4))==0
 
+                        boundingBoxTruth{m} = [boundingBoxTruth{m} ; detGround{k,:}{m+1}{g,1}{1}(t-count,1:4)*scale];%detections{k,:}{m+1}(:,1:4)
+                        % minimum bounding box value can be is 1
+                        boundingBoxTruth{m}(boundingBoxTruth{m}<1)=1;
+                        count = count+1;
+                    else
+                        boundingBoxTruth{m} = [boundingBoxTruth{m} ; detGround{k,:}{m+1}{g,1}{1}(t,1:4)*scale];
+                        boundingBoxTruth{m}(boundingBoxTruth{m}<1)=1;
+                    end
+                end
+            end
+        end
+        
     end
-%     % minimum bounding box value can be is 1
-%     boundingBox(boundingBox<1)=1;    
+    
+    % find the location of the object, i.e. the bottom center point.
     objLocation = cell(1,length(classes));
     objLocationTruth = cell(1,length(classes));    
     for m = 1:length(classes)
-    for n = 1:size(boundingBox{m},1)
-        objLocation{m}(n, :) = [boundingBox{m}(n, 1)+boundingBox{m}(n, 3)/2 , boundingBox{m}(n, 2)+boundingBox{m}(n, 4)];
-        
+        for n = 1:size(boundingBox{m},1)
+            objLocation{m}(n, :) = [boundingBox{m}(n, 1)+boundingBox{m}(n, 3)/2 , boundingBox{m}(n, 2)+boundingBox{m}(n, 4)];
+        end
+        for p = 1:size(boundingBoxTruth{m},1)
+            objLocationTruth{m}(p, :) = [boundingBoxTruth{m}(p, 1)+boundingBoxTruth{m}(p, 3)/2 , boundingBoxTruth{m}(p, 2)+boundingBoxTruth{m}(p, 4)];
+        end
     end
-    for p = 1:size(boundingBoxTruth{m},1)
-        objLocationTruth{m}(p, :) = [boundingBoxTruth{m}(p, 1)+boundingBoxTruth{m}(p, 3)/2 , boundingBoxTruth{m}(p, 2)+boundingBoxTruth{m}(p, 4)];
-    end
-    end
+    
+    % handle out-of-image location points
     for m = 1:length(classes)
         if length(objLocation{m})>0
             objLocationCol{m} = objLocation{m}(:,2);
@@ -311,40 +321,34 @@ for k = 1:size(detGround, 1) %size(detGround, 1)-4% 370:390%
             objLocationTruth{m}(:,2) = objLocationRowTruth{m};
         end
     end
-    % objLocation = [350, 365] %This was done to test if this pixel value lead
-    % to a WCS prediction of ~[5.8 0] and it did.
-    for m = 1:length(classes)
-    if size(objLocation{m}, 1)>0
-%         if size(objLocation{m},1)>1
-%             k
-%             size(objLocationTruth{m},1)
-%         end
-        detectionsWorld{m} = imageToVehicle(sensor2, objLocation{m});
-        detectionsWorldTruth{m} = imageToVehicle(sensor2, objLocationTruth{m});
-        % if any detections come back as > 500m, make their values 500m
-        % if they come back negative, make their values 500m 
-%         test(test>999)=999
-        detComb{m} = {detectionsWorldTruth{m}, detectionsWorld{m}};
-        detPixComb{m} = {objLocationTruth{m}, objLocation{m}};
-        % for debugging negative detection problem
-        if detectionsWorld{m}(:,1)<0
-            stop = 1
-        end
-    else
-        detectionsWorld{m} = [];
-        detectionsWorldTruth{m} = [];
-        detComb{m} = {[]};
-        detPixComb{m} = {[]};
-    end
-    end
     
+    % Map from pixel to world coordinate
     % Add world coordinate location of ground truth and detected object for
     % each true positive (didn't want to figure out indexing so making
     % detected world-coordinate and ground truth world-coordinate pairs instead
-%     for n = 1: length(classes)
-%         if size(detectionsWorld{n},1)>0
-%             detGround{k,n+1}{}
-
+    for m = 1:length(classes)
+        if size(objLocation{m}, 1)>0
+            detectionsWorld{m} = imageToVehicle(sensor2, objLocation{m});
+            detectionsWorldTruth{m} = imageToVehicle(sensor2, objLocationTruth{m});
+            % if any detections come back as > 500m, make their values 500m
+            % if they come back negative, make their values 500m 
+            % test(test>999)=999
+            detComb{m} = {detectionsWorldTruth{m}, detectionsWorld{m}};
+            detPixComb{m} = {objLocationTruth{m}, objLocation{m}};
+            
+            % for debugging negative detection problem
+            if detectionsWorld{m}(:,1)<0
+                stop = 1
+            end
+        else
+            detectionsWorld{m} = [];
+            detectionsWorldTruth{m} = [];
+            detComb{m} = {[]};
+            detPixComb{m} = {[]};
+        end
+    end
+    
+    % Store pixel and world location coordinates into a table.
     if k==1 || exist('WCPairTable')==0
         WCPairTable = array2table(detComb,'VariableNames',classes);
         pixPairTable = array2table(detPixComb,'VariableNames',classes);
@@ -355,85 +359,92 @@ for k = 1:size(detGround, 1) %size(detGround, 1)-4% 370:390%
         WCPairTable = [WCPairTable; WCPairTableAdd];
         pixPairTable = [pixPairTable; pixPairTableAdd];
     end
-            
-    
-    
-    if dispResults
-    % Plot the video frame and bounding boxes for the objects as well as the
-    % BEP
-    img = imread([imgPath,'\',detGround.imageFilename{k}]);% detections.imageFilename{k}]);
-    frameAnnotated = imresize(img,scale);
 
-    i=0;
-    % clear all detections shown on detPlot from previous frame
-    for m=1:length(classes)  
-        clearData(detPlot{m})
-        clearData(detPlotTruth{m})
-        clearData(detPlotVar{m})
-    end
-    
-    for m = 1:length(classes)    
-    if size(objLocation{m},1) > 0
-%         for i = 1:size(objLocation,1)
-        % for some reason insertShape does not perform properly when given
-        % a colour vecotr and returns a black box for any colour specified
-        % as a vector.
-            frameAnnotated = insertShape(frameAnnotated, 'Rectangle', boundingBox{m}, 'Color', colour{m}); ;%[leftmost x,top y,width, height]
+    % show image and plot
+    if dispImages
+        % Plot the video frame and bounding boxes for the objects as well as the
+        % BEP
+        img = imread([imgPath,'\',detGround.imageFilename{k}]);% detections.imageFilename{k}]);
+        frameAnnotated = imresize(img,scale);
 
-            frameAnnotated = insertText(frameAnnotated, objLocation{m}, cellstr(num2str(detectionsWorld{m})));
-            
-            frameAnnotated = insertShape(frameAnnotated, 'Rectangle', boundingBoxTruth{m}, 'Color', 'yellow') ;%colour{m});%[leftmost x,top y,width, height]
-            % creat confidence oval for each detected object in obj
-            % location
-            for t = 1:size(objLocation{m},1)     
-                [corr_loc, radius] = convertRawPCSToWCSFcn(objLocation{m}(t,:), probErr);
-                x0 = corr_loc(1); y0 = corr_loc(2);
-                t=-pi:0.2:pi;
-                x=x0+radius(1)*cos(t);
-                y=y0+radius(2)*sin(t);
-                frameAnnotated = insertMarker(frameAnnotated, [x',y'], 'size', 1);
-                frameAnnotated = insertMarker(frameAnnotated, [x0,y0], 'size', 1);
-            end
-            
-    else
-    end
-    im = imshow(frameAnnotated, 'Parent', ax1);
-    % plots detection on bird's eye plot
-    if length(detectionsWorld{m})>0
-        plotDetection(detPlot{m}, detectionsWorld{m})
-        plotDetection(detPlotTruth{m}, detectionsWorldTruth{m})
-        for t = 1:size(objLocation{m},1)     
-            [corr_loc, radius] = convertRawPCSToWCSFcn(objLocation{m}(t,:), probErr);
-            x0 = corr_loc(1); y0 = corr_loc(2);
-            t=-pi:0.2:pi;
-            x=x0+radius(1)*cos(t);
-            y=y0+radius(2)*sin(t);
-            y = y(x<640);
-            x = x(x<640);
-            x = x(y<512);
-            y = y(y<512);
-            y = y(x>1);
-            x = x(x>1);
-            x = x(y>1);
-            y = y(y>1);
-            varianceWorld = imageToVehicle(sensor2, [x',y']);
-            plotDetection(detPlotVar{m}, varianceWorld)
+        i=0;
+        % clear all detections shown on detPlot from previous frame
+        for m=1:length(classes)  
+            clearData(detPlot{m})
+            clearData(detPlotTruth{m})
+            clearData(detPlotVar{m})
         end
-        hold on
-    end
-    end
-    
-    if saveResults == 1
-		if ~exist(imgSavePath, 'dir')
-			mkdir(imgSavePath)
-		end
-        saveas(gcf, [imgSavePath, '\',detGround.imageFilename{k}, '_IoU_', IoU,'.jpg'])
-    end
 
-    % Also possible to plot tracks using trackPlotter(bep). See:
-    % https://www.mathworks.com/help/driving/examples/visualize-sensor-coverage-detections-and-tracks.html
-    pause(pauseTime)    
+        for m = 1:length(classes)    
+            if size(objLocation{m},1) > 0
+                % draw bounding boxes and location point.
+                frameAnnotated = insertShape(frameAnnotated, 'Rectangle', ...
+                    boundingBox{m}, 'Color', colour{m});
+                    %[leftmost x,top y,width, height]
+                frameAnnotated = insertText(frameAnnotated, objLocation{m}, ...
+                    cellstr(num2str(detectionsWorld{m})));
+                frameAnnotated = insertShape(frameAnnotated, 'Rectangle', ...
+                    boundingBoxTruth{m}, 'Color', 'yellow');
+                    %colour{m});%[leftmost x,top y,width, height]
+                    
+                % draw confidence oval, point by point (on original image)
+                for t = 1:size(objLocation{m},1)     
+                    [corr_loc, radius] = convertRawPCSToWCSFcn(objLocation{m}(t,:), probErr);
+                    x0 = corr_loc(1); y0 = corr_loc(2);
+                    t=-pi:0.2:pi;
+                    x=x0+radius(1)*cos(t);
+                    y=y0+radius(2)*sin(t);
+                    frameAnnotated = insertMarker(frameAnnotated, [x',y'], 'size', 1);
+                    frameAnnotated = insertMarker(frameAnnotated, [x0,y0], 'size', 1);
+                end
+            else
+            end
+            % show image
+            im = imshow(frameAnnotated, 'Parent', ax1);
+            
+            % plots detection on bird's eye plot
+            if length(detectionsWorld{m})>0
+                plotDetection(detPlot{m}, detectionsWorld{m})
+                plotDetection(detPlotTruth{m}, detectionsWorldTruth{m})
+                % draw confidence oval (on world coordinate)
+                for t = 1:size(objLocation{m},1)     
+                    [corr_loc, radius] = convertRawPCSToWCSFcn(objLocation{m}(t,:), probErr);
+                    x0 = corr_loc(1); y0 = corr_loc(2);
+                    t=-pi:0.2:pi;
+                    x=x0+radius(1)*cos(t);
+                    y=y0+radius(2)*sin(t);
+                    % remove out-of-image points
+                    y = y(x<640);
+                    x = x(x<640);
+                    x = x(y<512);
+                    y = y(y<512);
+                    y = y(x>1);
+                    x = x(x>1);
+                    x = x(y>1);
+                    y = y(y>1);
+                    % pixel to world conversion
+                    varianceWorld = imageToVehicle(sensor2, [x',y']);
+                    plotDetection(detPlotVar{m}, varianceWorld)
+                end
+                hold on
+            end
+        end
+
+        if saveImages == 1
+            if ~exist(imgSavePath, 'dir')
+                mkdir(imgSavePath)
+            end
+            saveas(gcf, [imgSavePath, '\',detGround.imageFilename{k}, '_IoU_', IoU,'.jpg'])
+        end
+
+        % Also possible to plot tracks using trackPlotter(bep). See:
+        % https://www.mathworks.com/help/driving/examples/visualize-sensor-coverage-detections-and-tracks.html
+        pause(pauseTime)    
     end
     
 end
 
+% May consider save pixPairTable and WCPairTable
+save([resultSavePath, '\', 'pixPairTable'], 'pixPairTable')
+save([resultSavePath, '\', 'WCPairTable'], 'WCPairTable')
+fprintf("Coordinate values saved to: \n\tpixPairTable.mat \n\tWCPairTable.mat\n\n")
