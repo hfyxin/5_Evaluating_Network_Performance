@@ -348,7 +348,8 @@ for k = 1:size(detGround, 1)  % each image
         end
     end
     
-    % Store pixel and world location coordinates into a table.
+    % IMPORTANT. Store location coordinate pairs into a table.
+	% the pair looks like: [ground truth, detected]
     if k==1 || exist('WCPairTable')==0
         WCPairTable = array2table(detComb,'VariableNames',classes);
         pixPairTable = array2table(detPixComb,'VariableNames',classes);
