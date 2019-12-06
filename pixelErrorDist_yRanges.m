@@ -1,4 +1,4 @@
-%% Plot distribution curves for each Y distance range (in pixel).
+%% Plot distribution curves for each range in Y direction (in pixel).
 %
 % Created by Elliott, based on Ben's files, but with some addition.
 %   - sortPixelErrorsXdistYpixels_full.m
@@ -23,7 +23,7 @@ range_y_pick1 = [1 161 195 324 512]';      % 4 ranges
 % the range Elliott observed
 range_y_pick2 = [1 178 195 223 324 512]';  % 5 ranges
 % the range random picked
-range_y_pick3 = [1 324 512]';
+range_y_pick3 = [1 195 512]';
 
 % SELECT YOUR CHOICE HERE
 ranges = range_y_pick3;      % which range setting to process
@@ -84,6 +84,7 @@ for i = 1:n_ranges
     ylabel('# of detections');
     % title example: range[1,161)
     title(['range [', num2str(ranges(i)), ',', num2str(ranges(i+1)), ')']);
+    % axis([-40 40 0 75])
     ax = gca;
     ax.YGrid = 'on';
 end

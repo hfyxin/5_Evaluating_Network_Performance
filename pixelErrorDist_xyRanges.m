@@ -23,8 +23,8 @@ load('.\results\WCPairTable.mat')     % WCPairTable, WCS: world coordinate syste
 load('.\results\pixPairTable.mat')    % pixPairTable, 
 
 %% Pre-calculated values to divide the image
-%range_y = [1,324,512]';
-range_y = [1,175,512]';
+% range_y = [1,324,512]';
+range_y = [1,253,512]';
 range_x = [1,214,427,640]';
 
 %% init some parameters
