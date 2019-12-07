@@ -182,9 +182,8 @@ classes = {detGround.Properties.VariableNames{2:end}};
 
 
 %% initialize the required plots:
-
-% % Use the imageToVehicle() function!!!
-% % Create extrinsic matrix for predicting object locations 
+% Use the imageToVehicle() function!!!
+% Create extrinsic matrix for predicting object locations 
 % rotMatWorld = rotation(pitch, yaw, roll);
 % transMatWorld = [sensorLocation(1) sensorLocation(2) height]';
 % rotMatCam = rotMatWorld.';
@@ -193,6 +192,7 @@ classes = {detGround.Properties.VariableNames{2:end}};
 % camMatrix = cameraMatrix(camParameters.cameraParamsJune7Calibration, rotMatCam, transMatCam)
 % camMat2 = [camParameters.cameraParamsJune7Calibration.IntrinsicMatrix zeros(3,1)]*extrinsicMat
 
+%% initialize the required plots:
 if dispImages
     % area to display image
     ax1 = axes('Position', [0.02 0 0.55 1]);
@@ -248,6 +248,8 @@ end
 
 %% parse through all images and plot their detections with bounding boxes
 % and world coordinates on the plot.
+
+fprintf("Processing detection table with %d rows:\n", size(detGround,1));
 for k = 1:size(detGround, 1)  % each image
 % size(detGround, 1)-4% 370:390%
 %     img = imread([imgPath,'\',detections.imageFilename{k}])*scale;
@@ -336,9 +338,11 @@ for k = 1:size(detGround, 1)  % each image
             detComb{m} = {detectionsWorldTruth{m}, detectionsWorld{m}};
             detPixComb{m} = {objLocationTruth{m}, objLocation{m}};
             
-            % for debugging negative detection problem
+            % For debugging negative detection problem.
+			% Exception found here: row-285/frame_1899, possibly caused by
+			% a pedestrian on topleft being too far away (uneven ground). -Elliott
             if detectionsWorld{m}(:,1)<0
-                stop = 1
+                fprintf("<Negative detection row-%d>, ", k);
             end
         else
             detectionsWorld{m} = [];
@@ -361,7 +365,7 @@ for k = 1:size(detGround, 1)  % each image
         pixPairTable = [pixPairTable; pixPairTableAdd];
     end
 
-    % show image and plot
+    % show image and plot, configurable
     if dispImages
         % Plot the video frame and bounding boxes for the objects as well as the
         % BEP
@@ -443,7 +447,12 @@ for k = 1:size(detGround, 1)  % each image
         pause(pauseTime)    
     end
     
+	% display progress
+	if rem(k, 100) == 1
+		fprintf("%d, ", k);
+	end
 end
+fprintf("done.\n");
 
 % May consider save pixPairTable and WCPairTable
 save([resultSavePath, '\', 'pixPairTable'], 'pixPairTable')
