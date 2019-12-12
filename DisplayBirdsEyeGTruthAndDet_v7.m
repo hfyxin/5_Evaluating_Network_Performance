@@ -10,7 +10,7 @@ groundTruth = 0;     % doesn't work
 detected = 0;        % doesn't work
 groundTruthWithDetected = 1;   % works
 pauseTime = 0;       % pause btw showing images
-dispImages = 0;     % display images. 0: only do calculation.
+dispImages = 1;     % display images. 0: only do calculation.
 saveImages = 0;     % save images to folder
 
 imgSavePath = '.\results\birds_eye_w_covariance';
@@ -198,10 +198,11 @@ if dispImages
     ax1 = axes('Position', [0.02 0 0.55 1]);
 
     % area to display birds eye plot
-    ax2 = axes('Position', [0.6 0.12 0.4 0.85]);
+    ax2 = axes('Position', [0.62,0.11,0.31,0.82]);
     bep = birdsEyePlot('Parent', ax2,...
-        'Xlimits', [0 100],...
-        'Ylimits', [-30 30]);
+        'Xlimits', [0 10],...
+        'Ylimits', [-4 4]);
+    grid on
 
     % V shaped area
     covPlot = coverageAreaPlotter(bep,...
@@ -225,6 +226,7 @@ if dispImages
     plotLaneBoundary(LanePlotter, [lb lb2, rb rb2])
 
     % Plot legend
+    % legend will not be shown in paper, but for readability in the code.
     for m = 1:length(classes)
         detPlot{m} = detectionPlotter(bep,...
             'MarkerFaceColor',colour{m},...
@@ -382,25 +384,42 @@ for k = 1:size(detGround, 1)  % each image
 
         for m = 1:length(classes)    
             if size(objLocation{m},1) > 0
-                % draw bounding boxes and location point.
+                % draw bounding boxes and location point on image
                 frameAnnotated = insertShape(frameAnnotated, 'Rectangle', ...
-                    boundingBox{m}, 'Color', colour{m});
+                    boundingBoxTruth{m}, 'Color', 'yellow', 'LineWidth', 3);
+                frameAnnotated = insertShape(frameAnnotated, 'Rectangle', ...
+                    boundingBox{m}, 'Color', colour{m}, 'LineWidth', 3);
                     %[leftmost x,top y,width, height]
-                frameAnnotated = insertText(frameAnnotated, objLocation{m}, ...
-                    cellstr(num2str(detectionsWorld{m})));
-                frameAnnotated = insertShape(frameAnnotated, 'Rectangle', ...
-                    boundingBoxTruth{m}, 'Color', 'yellow');
+                % textCoord = [num2str(objLocation{m}(1),3), ', ', ...
+                %             num2str(objLocation{m}(2),3)];
+                % frameAnnotated = insertText(frameAnnotated, objLocation{m}+[10,10], ...
+                %    textCoord, 'BoxColor','white', 'BoxOpacity', 0.9);
                     %colour{m});%[leftmost x,top y,width, height]
                     
-                % draw confidence oval, point by point (on original image)
-                for t = 1:size(objLocation{m},1)     
+                % draw confidence oval, point by point
+                for t = 1:size(objLocation{m},1)
                     [corr_loc, radius] = convertRawPCSToWCSFcn(objLocation{m}(t,:), probErr);
                     x0 = corr_loc(1); y0 = corr_loc(2);
                     t=-pi:0.2:pi;
                     x=x0+radius(1)*cos(t);
                     y=y0+radius(2)*sin(t);
-                    frameAnnotated = insertMarker(frameAnnotated, [x',y'], 'size', 1);
-                    frameAnnotated = insertMarker(frameAnnotated, [x0,y0], 'size', 1);
+                    % draw oval
+                    % frameAnnotated = insertShape(frameAnnotated, 'FilledCircle', ...
+                    % [x',y',1*ones(length(x'),1)],'Color','green','Opacity',1);
+                    
+                    % draw oval
+                    frameAnnotated = insertMarker(frameAnnotated, [x',y'], ...
+                        '+', 'Color', 'green', 'size', 1);
+                    % draw center
+                    frameAnnotated = insertShape(frameAnnotated, 'FilledCircle', ...
+                        [x0,y0,3],'Color','green','Opacity',1, 'LineWidth', 1);
+                    % draw text
+                    textCoord = [num2str(corr_loc(1),3),', ',num2str(corr_loc(2),3)];
+                    frameAnnotated = insertText(frameAnnotated, corr_loc +[10,10], ...
+                        textCoord, 'BoxColor','white', 'BoxOpacity', 0.8);
+                    %colour{m});%[leftmost x,top y,width, height]
+                    
+                    
                 end
             else
             end
@@ -432,6 +451,7 @@ for k = 1:size(detGround, 1)  % each image
                     plotDetection(detPlotVar{m}, varianceWorld)
                 end
                 hold on
+                grid on
             end
         end
 
