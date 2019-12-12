@@ -1,5 +1,8 @@
 function [pix_corr, radius] = convertRawPCSToWCSFcn(pixel, probErr)
+% Convert detected pixel coords to estimated pixel coords w/ oval radius.
+% Created by Ben. Modified by Elliott to make it configurable.
 
+% original range by Ben
 range1 = 195;
 range2 = 206;
 range3 = 223;
@@ -7,35 +10,65 @@ range4 = 253;
 range5 = 324;
 range6 = 512;
 
-if pixel(2)<range1
-    err = [-.345569,-1.9];
-    sigma = [3.6243, 4.60386];
-elseif pixel(2)>=range1 && pixel(2) < range2
-    err = [-.345569,-0.820233];
-    sigma = [3.6243, 5.67147];
-elseif pixel(2)>=range2 && pixel(2) < range3
-    err = [-1.31711,0.316178];
-    sigma = [4.05014, 8.89495];
-elseif pixel(2)>=range3 && pixel(2) < range4
-    err = [-.187478,0.316178];
-    sigma = [4.51462, 8.89495];
-elseif pixel(2)>=range4 && pixel(2) < range5
-    err = [-.187478,0.316178];
-    sigma = [5.90608, 8.89495];
-elseif pixel(2)>=range5 && pixel(2) < range6
-    err = [-1.769,10.2578];
-    sigma = [5.90608, 17.5366];
+% a better way to do it.
+% ranges = [1,195,206,223,253,324,512];   % origianl range by Ben
+ranges = [1,178,195,223,324,512];       % revised range by Elliott
+ranges(end) = ranges(end) + 1;
+
+% mean, variance of the error, for x and y error respectively.
+distributions = struct;
+distributions.mu = [-0.57883, -1.3636
+                    -0.36435, -2.1413
+                    -0.92757, -0.99214
+                    -1.0114,  1.536
+                    -1.8435,  11.756];
+distributions.sigma = [3.7648, 4.0471
+                       3.5759, 4.8228
+                       3.5794, 5.9277
+                       4.8948, 9.7961
+                       6.3796, 19.122];
+
+% Out of range error
+if pixel(2) >= ranges(end) || pixel(2) < ranges(1)
+    error(['pixel y coord out of range: ', num2str(pixel(2))]);
 end
 
+% find the range that y coord falls into, Elliott
+idx = find(ranges > pixel(2), 1) - 1;
+err = distributions.mu(idx,:);
+sigma = distributions.sigma(idx,:);
+
+% find the range that y coord falls into, Ben
+% if pixel(2)<range1
+%     err = [-.345569,-1.9];
+%     sigma = [3.6243, 4.60386];
+% elseif pixel(2)>=range1 && pixel(2) < range2
+%     err = [-.345569,-0.820233];
+%     sigma = [3.6243, 5.67147];
+% elseif pixel(2)>=range2 && pixel(2) < range3
+%     err = [-1.31711,0.316178];
+%     sigma = [4.05014, 8.89495];
+% elseif pixel(2)>=range3 && pixel(2) < range4
+%     err = [-.187478,0.316178];
+%     sigma = [4.51462, 8.89495];
+% elseif pixel(2)>=range4 && pixel(2) < range5
+%     err = [-.187478,0.316178];
+%     sigma = [5.90608, 8.89495];
+% elseif pixel(2)>=range5 && pixel(2) < range6
+%     err = [-1.769,10.2578];
+%     sigma = [5.90608, 17.5366];
+% end
+
+% choose the probable error, confidence level
 if probErr == 0.5
     std_dev = 0.6745;
 elseif probErr == 0.95
     std_dev = 1.96;
 end
 
-radius = sigma*std_dev
-
+radius = sigma*std_dev;
 pix_corr = pixel-err;
+
 % px_min = pix_corr(1)-std_dev*sigma(1);
 % px_max = pix_corr(1)+std_dev*sigma(1);
 % py_min = pix_corr(2)-std_dev*sigma(2);
