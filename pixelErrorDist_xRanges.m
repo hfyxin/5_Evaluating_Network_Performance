@@ -1,6 +1,6 @@
 %% Plot distribution curves for each range in X direction (in pixel).
 %
-% Created by Elliott, the script is very similar to pixelErrorDist_yRange.m
+% Created by Elliot Huangfu, the script is very similar to pixelErrorDist_yRange.m
 % I don't see a clear pattern of distribution distinguishing on X direction
 % ranges.
 %
@@ -16,7 +16,7 @@ load('.\results\pixPairTable.mat')    % pixPairTable,
 range_x_original = [1:40:640, 640]';
 % the range from Ben's code sortPixelErrorsYdistribution_full.m
 range_x_pick1 = [1 161 195 324 512]';      % 4 ranges
-% the range Elliott observed
+% the range Elliot observed
 range_x_pick2 = [1 178 195 223 324 512]';  % 5 ranges
 % the range random picked
 range_x_pick3 = [1 324 512]';

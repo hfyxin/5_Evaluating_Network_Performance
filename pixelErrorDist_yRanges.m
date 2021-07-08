@@ -1,6 +1,6 @@
 %% Plot distribution curves for each range in Y direction (in pixel).
 %
-% Created by Elliott, based on Ben's files, but with some addition.
+% Created by Elliot Huangfu, based on Ben's files, but with some addition.
 %   - sortPixelErrorsXdistYpixels_full.m
 %   - sortPixelErrorsYdistribution_full.m
 % The change is verified by comparing the result from Ben's code.
@@ -20,13 +20,13 @@ load('.\results\pixPairTable.mat')    % pixPairTable,
 range_y_original = [1 161 165 168 172 175 178 182 188 195 206 223 253 324 512]';   % 14 ranges
 % the range from Ben's code sortPixelErrorsYdistribution_full.m
 range_y_pick1 = [1 161 195 324 512]';      % 4 ranges
-% the range Elliott observed
+% the range Elliot observed
 range_y_pick2 = [1 178 195 223 324 512]';  % 5 ranges
 % the range random picked
 range_y_pick3 = [1 195 512]';
 
 % SELECT YOUR CHOICE HERE
-ranges = range_y_pick3;      % which range setting to process
+ranges = range_y_pick2;      % which range setting to process
 hist_grid = [2,3];           % the [row, col] of multi plots (histogram)
 
 %% init some parameters

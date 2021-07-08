@@ -1,7 +1,7 @@
 %% Plot distribution curves for a grid of XY range (in pixel).
 %
 % Suggest checking pixelErrorDist_yRanges.m before this one. It's easier.
-% Created by Elliott, based on Ben's files:
+% Created by Elliot Huangfu, based on Ben's files:
 %   - sortPixelErrorsXdistributionWithX_full.m
 %   - sortPixelErrorsYdistributionWithX_full.m
 % The change is verified by comparing the result from Ben's code.
@@ -24,7 +24,7 @@ load('.\results\pixPairTable.mat')    % pixPairTable,
 
 %% Pre-calculated values to divide the image
 % range_y = [1,324,512]';
-range_y = [1,253,512]';
+range_y = [1,324,512]';
 range_x = [1,214,427,640]';
 
 %% init some parameters
