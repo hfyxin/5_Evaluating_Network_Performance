@@ -342,7 +342,7 @@ for k = 1:size(detGround, 1)  % each image
             
             % For debugging negative detection problem.
 			% Exception found here: row-285/frame_1899, possibly caused by
-			% a pedestrian on topleft being too far away (uneven ground). -Elliott
+			% a pedestrian on topleft being too far away (uneven ground). -Elliot
             if detectionsWorld{m}(:,1)<0
                 fprintf("<Negative detection row-%d>, ", k);
             end

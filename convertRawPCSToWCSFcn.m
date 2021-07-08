@@ -1,6 +1,6 @@
 function [pix_corr, radius] = convertRawPCSToWCSFcn(pixel, probErr)
 % Convert detected pixel coords to estimated pixel coords w/ oval radius.
-% Created by Ben. Modified by Elliott to make it configurable.
+% Created by Ben. Modified by Elliot Huangfu to make it configurable.
 
 % original range by Ben
 range1 = 195;
@@ -12,7 +12,7 @@ range6 = 512;
 
 % a better way to do it.
 % ranges = [1,195,206,223,253,324,512];   % origianl range by Ben
-ranges = [1,178,195,223,324,512];       % revised range by Elliott
+ranges = [1,178,195,223,324,512];       % revised range by Elliot
 ranges(end) = ranges(end) + 1;
 
 % mean, variance of the error, for x and y error respectively.
@@ -33,7 +33,7 @@ if pixel(2) >= ranges(end) || pixel(2) < ranges(1)
     error(['pixel y coord out of range: ', num2str(pixel(2))]);
 end
 
-% find the range that y coord falls into, Elliott
+% find the range that y coord falls into, Elliot
 idx = find(ranges > pixel(2), 1) - 1;
 err = distributions.mu(idx,:);
 sigma = distributions.sigma(idx,:);
